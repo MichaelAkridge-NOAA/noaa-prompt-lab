@@ -25,12 +25,6 @@
       "name": "Science Communication",
       "description": "Translating research into accessible formats",
       "color": "#7c3aed"
-    },
-    {
-      "id": "marine-science",
-      "name": "Marine Science",
-      "description": "Ocean and marine ecosystem research tools",
-      "color": "#0891b2"
     }
   ],
   "ui": {
