@@ -2,14 +2,14 @@
 
 A curated collection of AI prompts designed for NOAA workflows and scientific research. 
 
-## ✨ Features
+## Features
 
+- 🚀 **Gemini integration**
+- 🔍 **Real-time search** 
+- 📋 **One-click copying**
 - 📝 **Markdown-based prompts**
-- 🔍 **Real-time search** and category filtering
-- 📋 **One-click copying** with visual feedback
-- 🚀 **Gemini integration** - launch prompts instantly
 
-## 📚 Available Prompts in Development
+## Available Prompts in Development
 
 | Prompt | Category | Description |
 |--------|----------|-------------|
