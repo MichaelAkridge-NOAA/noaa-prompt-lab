@@ -390,7 +390,7 @@
 
         // Initialize site with config data
         function initializeSite() {
-            document.getElementById('site-title').textContent = config.site?.title || 'NOAA Gemini Prompts';
+            document.getElementById('site-title').textContent = config.site?.title || 'NOAA Gemini Prompt Lab';
             document.getElementById('site-subtitle').textContent = config.site?.subtitle || '';
             document.getElementById('footer-text').textContent = config.site?.footer || '';
             document.getElementById('gemini-link').href = config.site?.geminiUrl || 'https://gemini.google.com/';
@@ -399,7 +399,7 @@
                 document.getElementById('version-info').textContent = `v${config.site.version}`;
             }
             
-            document.title = config.site?.title || 'NOAA Gemini Prompts';
+            document.title = config.site?.title || 'NOAA Gemini Prompt Lab';
         }
 
         // Create category filter buttons
