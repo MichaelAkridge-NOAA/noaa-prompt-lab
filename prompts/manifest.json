@@ -1,0 +1,16 @@
+{
+  "prompts": [
+    "archive-agent.md",
+    "data-quality-control.md", 
+    "research-summarizer.md",
+    "outreach-communications.md"
+  ],
+  "lastUpdated": "2025-09-25T00:00:00Z",
+  "totalPrompts": 4,
+  "categories": [
+    "Data Management",
+    "Data Analysis", 
+    "Science Communication",
+    "Marine Science"
+  ]
+}

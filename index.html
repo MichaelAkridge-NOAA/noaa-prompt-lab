@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOAA Gemini Prompt Lab</title>
+    <meta name="description" content="A curated collection of AI prompts for NOAA workflows and scientific research">
+    <meta name="keywords" content="NOAA, Gemini, AI prompts, scientific research, data management">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark background */
+            color: #d1d5db; /* Light gray text */
+        }
+        .prompt-card {
+            background-color: #1f2937; /* Slightly lighter card background */
+            border: 1px solid #374151; /* Subtle border */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .prompt-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            transition: background-color 0.3s ease;
+            color: white;
+            text-decoration: none;
+        }
+        .copy-btn {
+            background-color: #374151;
+        }
+        .copy-btn:hover {
+            background-color: #4b5563;
+        }
+        .copied-btn {
+            background-color: #059669; /* Green for success */
+        }
+        .try-card-btn {
+             background-color: #2563eb; /* Blue */
+        }
+        .try-card-btn:hover {
+            background-color: #1d4ed8;
+        }
+        .try-gemini-btn {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .try-gemini-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+        .search-input {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            color: #d1d5db;
+        }
+        .search-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px #2563eb;
+        }
+        .category-filter {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            transition: all 0.3s ease;
+        }
+        .category-filter:hover, .category-filter.active {
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+        .tag {
+            background-color: #374151;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+        .error {
+            background-color: #7f1d1d;
+            border: 1px solid #991b1b;
+            color: #fecaca;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header Section -->
+    <header class="py-12 md:py-20 bg-gray-900/50">
+        <div class="container mx-auto px-6 text-center">
+            <h1 id="site-title" class="text-4xl md:text-6xl font-bold text-white tracking-tight">NOAA Gemini Prompts</h1>
+            <p id="site-subtitle" class="mt-4 text-lg md:text-xl text-gray-400 max-w-3xl mx-auto">
+                A curated collection of prompts designed to streamline your NOAA-related workflows with Google Gemini.
+            </p>
+            
+            <!-- Search and Filter Controls -->
+            <div class="mt-8 max-w-2xl mx-auto space-y-4">
+                <!-- Search Bar -->
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="Search prompts..." 
+                           class="search-input w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <svg class="absolute right-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"></path>
+                    </svg>
+                </div>
+                
+                <!-- Category Filters -->
+                <div id="category-filters" class="flex flex-wrap justify-center gap-2">
+                    <!-- Category buttons will be injected here -->
+                </div>
+                
+                <!-- Results Counter -->
+                <div id="results-counter" class="text-sm text-gray-500"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content: Prompt Grid -->
+    <main class="container mx-auto px-6 py-12 md:py-20">
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <span class="ml-3 text-gray-400">Loading prompts...</span>
+        </div>
+        
+        <!-- Error State -->
+        <div id="error" class="error rounded-lg p-6 hidden">
+            <h3 class="font-bold text-lg">Error Loading Prompts</h3>
+            <p class="mt-2">Failed to load prompts. Please check your internet connection and try again.</p>
+        </div>
+        
+        <!-- Prompt Grid -->
+        <div id="prompt-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden">
+            <!-- Prompt cards will be injected here by JavaScript -->
+        </div>
+        
+        <!-- No Results -->
+        <div id="no-results" class="text-center py-12 hidden">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <h3 class="mt-4 text-lg font-medium text-gray-300">No prompts found</h3>
+            <p class="mt-2 text-gray-500">Try adjusting your search terms or filters.</p>
+        </div>
+    </main>
+
+    <!-- Floating Action Button to Try in Gemini -->
+    <a id="gemini-link" href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" 
+       class="try-gemini-btn fixed bottom-8 right-8 bg-blue-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg flex items-center space-x-3 z-50">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        <span>Try in Gemini</span>
+    </a>
+
+    <!-- Footer -->
+    <footer class="text-center py-8 border-t border-gray-700 mt-12">
+        <p id="footer-text" class="text-gray-500">Built for the NOAA community. Easily deployable via GitHub Pages.</p>
+        <div class="mt-2 text-xs text-gray-600">
+            <span id="version-info"></span>
+            <span class="mx-2">•</span>
+            <a href="https://github.com" class="hover:text-gray-400">View on GitHub</a>
+        </div>
+    </footer>
+
+    <script>
+        // Global variables
+        let allPrompts = [];
+        let filteredPrompts = [];
+        let config = {};
+        let categories = [];
+        let currentFilter = 'all';
+
+        // DOM elements
+        const promptGrid = document.getElementById('prompt-grid');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const noResults = document.getElementById('no-results');
+        const searchInput = document.getElementById('search-input');
+        const categoryFilters = document.getElementById('category-filters');
+        const resultsCounter = document.getElementById('results-counter');
+
+        // YAML frontmatter parser - improved version
+        function parseFrontmatter(content) {
+            const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
+            const match = content.match(frontmatterRegex);
+            
+            if (!match) {
+                console.log('No frontmatter found in content');
+                return { frontmatter: {}, content: content };
+            }
+            
+            const frontmatterText = match[1];
+            const bodyContent = match[2];
+            
+            console.log('Parsing frontmatter:', frontmatterText);
+            
+            // Simple YAML parser for frontmatter
+            const frontmatter = {};
+            const lines = frontmatterText.split('\n');
+            let currentKey = null;
+            
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) continue;
+                
+                if (trimmed.startsWith('- ')) {
+                    // Array item
+                    if (currentKey && Array.isArray(frontmatter[currentKey])) {
+                        frontmatter[currentKey].push(trimmed.substring(2).trim());
+                    } else if (currentKey) {
+                        // Initialize as array if it wasn't already
+                        frontmatter[currentKey] = [trimmed.substring(2).trim()];
+                    }
+                } else if (trimmed.includes(':')) {
+                    // Key-value pair
+                    const colonIndex = trimmed.indexOf(':');
+                    const key = trimmed.substring(0, colonIndex).trim();
+                    const value = trimmed.substring(colonIndex + 1).trim();
+                    
+                    if (key.includes(' ')) continue; // Skip invalid keys
+                    
+                    currentKey = key;
+                    
+                    if (value === '') {
+                        // Potential array
+                        frontmatter[key] = [];
+                    } else {
+                        // Remove quotes if present
+                        frontmatter[key] = value.replace(/^["']|["']$/g, '');
+                    }
+                }
+            }
+            
+            console.log('Parsed frontmatter:', frontmatter);
+            return { frontmatter, content: bodyContent };
+        }
+
+        // Load markdown file and parse it
+        async function loadMarkdownPrompt(filename) {
+            try {
+                console.log(`Loading ${filename}...`);
+                const response = await fetch(`./prompts/${filename}`);
+                if (!response.ok) {
+                    console.error(`Failed to load ${filename}: ${response.status}`);
+                    return null;
+                }
+                
+                const content = await response.text();
+                const { frontmatter, content: promptContent } = parseFrontmatter(content);
+                
+                // Extract the actual prompt text (everything after the title)
+                const lines = promptContent.split('\n');
+                const titleIndex = lines.findIndex(line => line.startsWith('# '));
+                const promptText = lines.slice(titleIndex + 1).join('\n').trim();
+                
+                const prompt = {
+                    id: frontmatter.id || filename.replace('.md', ''),
+                    title: frontmatter.title || 'Untitled Prompt',
+                    category: frontmatter.category || 'General',
+                    description: frontmatter.description || '',
+                    tags: frontmatter.tags || [],
+                    prompt: promptText,
+                    created: frontmatter.created,
+                    author: frontmatter.author
+                };
+                
+                console.log(`✅ Successfully loaded: ${prompt.title}`);
+                return prompt;
+            } catch (err) {
+                console.error(`Error loading ${filename}:`, err);
+                return null;
+            }
+        }
+
+        // Load prompts from manifest
+        async function loadPromptsFromManifest() {
+            try {
+                console.log('Loading manifest...');
+                const manifestResponse = await fetch('./prompts/manifest.json');
+                if (!manifestResponse.ok) {
+                    console.warn('Failed to load manifest:', manifestResponse.status);
+                    return [];
+                }
+                
+                const manifest = await manifestResponse.json();
+                console.log('Manifest loaded, processing', manifest.prompts.length, 'prompt files...');
+                
+                const promptPromises = manifest.prompts.map(filename => loadMarkdownPrompt(filename));
+                const prompts = await Promise.all(promptPromises);
+                
+                const validPrompts = prompts.filter(prompt => prompt !== null);
+                console.log('Successfully loaded', validPrompts.length, 'valid prompts from manifest');
+                
+                return validPrompts;
+            } catch (err) {
+                console.error('Error loading prompts from manifest:', err);
+                return [];
+            }
+        }
+
+        // Load legacy JSON prompts (fallback)
+        async function loadJSONPrompts() {
+            try {
+                const response = await fetch('./prompts.json');
+                if (!response.ok) return [];
+                
+                const data = await response.json();
+                return data.prompts || [];
+            } catch (err) {
+                console.error('Error loading JSON prompts:', err);
+                return [];
+            }
+        }
+
+        // Load data from both sources
+        async function loadData() {
+            try {
+                console.log('Starting to load data...');
+                
+                // Load config
+                const configResponse = await fetch('./config.json');
+                if (configResponse.ok) {
+                    config = await configResponse.json();
+                    console.log('Config loaded successfully');
+                } else {
+                    config = { site: {}, categories: [], ui: {} }; // Default config
+                    console.warn('Using default config');
+                }
+
+                // Load prompts from markdown files (preferred) and JSON (fallback)
+                console.log('Loading prompts...');
+                const [markdownPrompts, jsonPrompts] = await Promise.all([
+                    loadPromptsFromManifest(),
+                    loadJSONPrompts()
+                ]);
+
+                console.log(`Loaded ${markdownPrompts.length} markdown prompts and ${jsonPrompts.length} JSON prompts`);
+
+                // Combine prompts (markdown takes precedence)
+                const markdownIds = new Set(markdownPrompts.map(p => p.id));
+                const uniqueJsonPrompts = jsonPrompts.filter(p => !markdownIds.has(p.id));
+                
+                allPrompts = [...markdownPrompts, ...uniqueJsonPrompts];
+                categories = config.categories || [];
+
+                console.log(`Total prompts loaded: ${allPrompts.length}`);
+
+                // Initialize the site
+                initializeSite();
+                createCategoryFilters();
+                filteredPrompts = [...allPrompts];
+                renderPrompts();
+                updateResultsCounter();
+
+                console.log('Data loading completed successfully');
+
+            } catch (err) {
+                console.error('Error loading data:', err);
+                showError();
+            }
+        }
+
+        // Initialize site with config data
+        function initializeSite() {
+            document.getElementById('site-title').textContent = config.site?.title || 'NOAA Gemini Prompts';
+            document.getElementById('site-subtitle').textContent = config.site?.subtitle || '';
+            document.getElementById('footer-text').textContent = config.site?.footer || '';
+            document.getElementById('gemini-link').href = config.site?.geminiUrl || 'https://gemini.google.com/';
+            
+            if (config.site?.version) {
+                document.getElementById('version-info').textContent = `v${config.site.version}`;
+            }
+            
+            document.title = config.site?.title || 'NOAA Gemini Prompts';
+        }
+
+        // Create category filter buttons
+        function createCategoryFilters() {
+            if (!config.ui?.showCategories) return;
+
+            const allButton = document.createElement('button');
+            allButton.textContent = 'All';
+            allButton.className = 'category-filter px-4 py-2 rounded-lg text-sm font-medium text-white active';
+            allButton.onclick = () => filterByCategory('all');
+            categoryFilters.appendChild(allButton);
+
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.textContent = category.name;
+                button.className = 'category-filter px-4 py-2 rounded-lg text-sm font-medium text-white';
+                button.onclick = () => filterByCategory(category.id);
+                categoryFilters.appendChild(button);
+            });
+        }
+
+        // Filter prompts by category
+        function filterByCategory(categoryId) {
+            currentFilter = categoryId;
+            
+            // Update active button
+            document.querySelectorAll('.category-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            applyFilters();
+        }
+
+        // Apply search and category filters
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            filteredPrompts = allPrompts.filter(prompt => {
+                const matchesSearch = !searchTerm || 
+                    prompt.title.toLowerCase().includes(searchTerm) ||
+                    prompt.description.toLowerCase().includes(searchTerm) ||
+                    prompt.tags?.some(tag => tag.toLowerCase().includes(searchTerm));
+
+                const matchesCategory = currentFilter === 'all' || 
+                    prompt.category?.toLowerCase().replace(/\s+/g, '-') === currentFilter;
+
+                return matchesSearch && matchesCategory;
+            });
+
+            renderPrompts();
+            updateResultsCounter();
+        }
+
+        // Render prompt cards
+        function renderPrompts() {
+            console.log(`Rendering ${filteredPrompts.length} prompts...`);
+            promptGrid.innerHTML = '';
+            
+            if (filteredPrompts.length === 0) {
+                console.log('No prompts to display, showing no results message');
+                showNoResults();
+                return;
+            }
+
+            hideStates();
+            promptGrid.classList.remove('hidden');
+
+            filteredPrompts.forEach((prompt, index) => {
+                console.log(`Rendering prompt ${index + 1}: ${prompt.title}`);
+                const card = createPromptCard(prompt);
+                promptGrid.appendChild(card);
+            });
+            
+            console.log('All prompts rendered successfully');
+        }
+
+        // Create individual prompt card
+        function createPromptCard(prompt) {
+            const card = document.createElement('div');
+            card.className = 'prompt-card rounded-lg shadow-md p-6 flex flex-col';
+            
+            const encodedPrompt = encodeURIComponent(prompt.prompt);
+            
+            // Find category info, handle case where category might not match exactly
+            let categoryInfo = null;
+            let categoryColor = '#6b7280'; // default gray
+            
+            if (prompt.category && categories.length > 0) {
+                // Try exact match first
+                categoryInfo = categories.find(cat => cat.name === prompt.category);
+                
+                // If not found, try case-insensitive match
+                if (!categoryInfo) {
+                    categoryInfo = categories.find(cat => 
+                        cat.name.toLowerCase() === prompt.category.toLowerCase()
+                    );
+                }
+                
+                // If still not found, try ID-based match
+                if (!categoryInfo) {
+                    const categoryId = prompt.category.toLowerCase().replace(/\s+/g, '-');
+                    categoryInfo = categories.find(cat => cat.id === categoryId);
+                }
+                
+                if (categoryInfo) {
+                    categoryColor = categoryInfo.color;
+                }
+            }
+
+            const tagsHtml = config.ui?.showTags && prompt.tags && prompt.tags.length > 0 ? 
+                `<div class="flex flex-wrap gap-2 mt-2">
+                    ${prompt.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                </div>` : '';
+
+            const copyButtonHtml = config.ui?.enableCopyFeature !== false ? 
+                '<button class="btn copy-btn">1. Copy Prompt</button>' : '';
+                
+            const geminiLinkHtml = config.ui?.enableDirectGeminiLinks !== false ? 
+                `<a href="${config.site?.geminiUrl || 'https://gemini.google.com'}?prompt=${encodedPrompt}" target="_blank" rel="noopener noreferrer" class="btn try-card-btn">2. Try in Gemini</a>` : '';
+
+            const buttonsHtml = (copyButtonHtml || geminiLinkHtml) ? 
+                `<div class="mt-6 ${copyButtonHtml && geminiLinkHtml ? 'grid grid-cols-2 gap-4' : 'flex'}">
+                    ${copyButtonHtml}
+                    ${geminiLinkHtml}
+                </div>` : '';
+
+            card.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <h3 class="text-xl font-bold text-white">${prompt.title}</h3>
+                    ${prompt.category ? `<span class="text-xs px-2 py-1 rounded-full" style="background-color: ${categoryColor}20; color: ${categoryColor};">${prompt.category}</span>` : ''}
+                </div>
+                <p class="text-gray-400 mt-2 flex-grow">${prompt.description}</p>
+                ${tagsHtml}
+                <div class="mt-4 pt-4 border-t border-gray-600">
+                    <pre class="bg-gray-900 rounded-md p-4 text-sm text-gray-300 whitespace-pre-wrap overflow-x-auto h-40 scrollbar-thin"><code>${escapeHtml(prompt.prompt)}</code></pre>
+                </div>
+                ${buttonsHtml}
+            `;
+
+            return card;
+        }
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Update results counter
+        function updateResultsCounter() {
+            const total = allPrompts.length;
+            const showing = filteredPrompts.length;
+            resultsCounter.textContent = `Showing ${showing} of ${total} prompts`;
+        }
+
+        // Show different states
+        function showError() {
+            hideStates();
+            error.classList.remove('hidden');
+        }
+
+        function showNoResults() {
+            hideStates();
+            noResults.classList.remove('hidden');
+        }
+
+        function hideStates() {
+            loading.classList.add('hidden');
+            error.classList.add('hidden');
+            noResults.classList.add('hidden');
+            promptGrid.classList.add('hidden');
+        }
+
+        // Copy functionality
+        promptGrid.addEventListener('click', function(e) {
+            const button = e.target.closest('.copy-btn');
+            if (!button) return;
+
+            const card = button.closest('.prompt-card');
+            const pre = card.querySelector('pre');
+            const promptText = pre.textContent;
+            
+            navigator.clipboard.writeText(promptText).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied-btn');
+                button.classList.remove('copy-btn');
+
+                setTimeout(() => {
+                    button.textContent = '1. Copy Prompt';
+                    button.classList.remove('copied-btn');
+                    button.classList.add('copy-btn');
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = promptText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    button.textContent = 'Copied!';
+                    button.classList.add('copied-btn');
+                    button.classList.remove('copy-btn');
+                    setTimeout(() => {
+                        button.textContent = '1. Copy Prompt';
+                        button.classList.remove('copied-btn');
+                        button.classList.add('copy-btn');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+                document.body.removeChild(textArea);
+            });
+        });
+
+        // Search functionality
+        searchInput.addEventListener('input', applyFilters);
+
+        // Debounce search input
+        let searchTimeout;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 300);
+        });
+
+        // Initialize the application
+        loadData();
+    </script>
+</body>
+</html>
+
