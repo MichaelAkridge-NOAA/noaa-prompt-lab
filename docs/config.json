@@ -1,6 +1,6 @@
 {
   "site": {
-    "title": "NOAA Gemini Prompts",
+    "title": "NOAA Gemini Prompt Lab",
     "subtitle": "A curated collection of prompts designed to streamline your NOAA-related workflows with Google Gemini.",
     "footer": "Built for the NOAA community. Easily deployable via GitHub Pages.",
     "geminiUrl": "https://gemini.google.com/",
