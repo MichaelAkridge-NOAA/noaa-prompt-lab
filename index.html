@@ -181,6 +181,33 @@
         let config = {};
         let categories = [];
         let currentFilter = 'all';
+        let basePath = './'; // Default for local development
+
+        // Detect the correct base path for GitHub Pages
+        function detectBasePath() {
+            const hostname = window.location.hostname;
+            const pathname = window.location.pathname;
+            
+            console.log('Current hostname:', hostname);
+            console.log('Current pathname:', pathname);
+            
+            // Check if we're on GitHub Pages
+            if (hostname.includes('github.io')) {
+                // For GitHub Pages URLs like: https://username.github.io/repo-name/
+                if (pathname.startsWith('/noaa-prompt-lab/')) {
+                    basePath = '/noaa-prompt-lab/';
+                } else if (pathname !== '/' && pathname !== '/index.html') {
+                    // Extract the first path segment as the repo name
+                    const segments = pathname.split('/').filter(s => s);
+                    if (segments.length > 0) {
+                        basePath = `/${segments[0]}/`;
+                    }
+                }
+            }
+            // For local development, keep basePath as './'
+            
+            console.log('Detected base path:', basePath);
+        }
 
         // DOM elements
         const promptGrid = document.getElementById('prompt-grid');
@@ -251,7 +278,10 @@
         async function loadMarkdownPrompt(filename) {
             try {
                 console.log(`Loading ${filename}...`);
-                const response = await fetch(`./prompts/${filename}`);
+                const url = `${basePath}prompts/${filename}`;
+                console.log('Prompt URL:', url);
+                
+                const response = await fetch(url);
                 if (!response.ok) {
                     console.error(`Failed to load ${filename}: ${response.status}`);
                     return null;
@@ -288,14 +318,46 @@
         async function loadPromptsFromManifest() {
             try {
                 console.log('Loading manifest...');
-                const manifestResponse = await fetch('./prompts/manifest.json');
-                if (!manifestResponse.ok) {
-                    console.warn('Failed to load manifest:', manifestResponse.status);
+                
+                // Try multiple possible paths in order of preference
+                const possiblePaths = [
+                    `${basePath}prompts/manifest.json`,
+                    './prompts/manifest.json',
+                    '/noaa-prompt-lab/prompts/manifest.json'
+                ];
+                
+                let manifest = null;
+                let workingPath = null;
+                
+                for (const path of possiblePaths) {
+                    console.log('Trying manifest path:', path);
+                    try {
+                        const response = await fetch(path);
+                        if (response.ok) {
+                            manifest = await response.json();
+                            workingPath = path.replace('manifest.json', '');
+                            console.log('✅ Manifest loaded from:', path);
+                            break;
+                        } else {
+                            console.log('❌ Failed to load from:', path, '- Status:', response.status);
+                        }
+                    } catch (err) {
+                        console.log('❌ Error with path:', path, '- Error:', err.message);
+                    }
+                }
+                
+                if (!manifest) {
+                    console.error('Failed to load manifest from any path');
                     return [];
                 }
                 
-                const manifest = await manifestResponse.json();
                 console.log('Manifest loaded, processing', manifest.prompts.length, 'prompt files...');
+                
+                // Update basePath to the working path for subsequent requests
+                if (workingPath) {
+                    basePath = workingPath;
+                    console.log('Updated basePath to:', basePath);
+                }
                 
                 const promptPromises = manifest.prompts.map(filename => loadMarkdownPrompt(filename));
                 const prompts = await Promise.all(promptPromises);
@@ -328,15 +390,39 @@
         async function loadData() {
             try {
                 console.log('Starting to load data...');
+                console.log('Current URL:', window.location.href);
                 
-                // Load config
-                const configResponse = await fetch('./config.json');
-                if (configResponse.ok) {
-                    config = await configResponse.json();
-                    console.log('Config loaded successfully');
-                } else {
+                // Detect base path first
+                detectBasePath();
+                
+                // Try to load config from multiple possible paths
+                const possibleConfigPaths = [
+                    `${basePath}config.json`,
+                    './config.json',
+                    '/noaa-prompt-lab/config.json'
+                ];
+                
+                let configLoaded = false;
+                for (const configPath of possibleConfigPaths) {
+                    console.log('Trying config path:', configPath);
+                    try {
+                        const configResponse = await fetch(configPath);
+                        if (configResponse.ok) {
+                            config = await configResponse.json();
+                            console.log('✅ Config loaded from:', configPath);
+                            configLoaded = true;
+                            break;
+                        } else {
+                            console.log('❌ Failed to load config from:', configPath, '- Status:', configResponse.status);
+                        }
+                    } catch (err) {
+                        console.log('❌ Error with config path:', configPath, '- Error:', err.message);
+                    }
+                }
+                
+                if (!configLoaded) {
                     config = { site: {}, categories: [], ui: {} }; // Default config
-                    console.warn('Using default config');
+                    console.warn('Using default config - could not load from any path');
                 }
 
                 // Load prompts from markdown files (preferred) and JSON (fallback)
@@ -356,6 +442,12 @@
                 categories = config.categories || [];
 
                 console.log(`Total prompts loaded: ${allPrompts.length}`);
+
+                if (allPrompts.length === 0) {
+                    console.error('No prompts were loaded! This suggests a path issue.');
+                    showError();
+                    return;
+                }
 
                 // Initialize the site
                 initializeSite();
